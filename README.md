@@ -1,15 +1,13 @@
-# wonderfall/mastodon
+# Mastodon
 *Your self-hosted, globally interconnected microblogging community.*
 
-Mastodon [official website](https://joinmastodon.org/) and [source code](https://github.com/tootsuite/mastodon/).
+Mastodon [official website](https://joinmastodon.org/) and [source code](https://github.com/tootsuite/mastodon/). This repository is a fork of [Wonderfall/docker-mastodon](https://github.com/Wonderfall/docker-mastodon).
 
 ## Why this image?
 This non-official image is intended as an **all-in-one** (as in monolithic) Mastodon **production** image. You should use [the official image](https://hub.docker.com/r/tootsuite/mastodon) for development purpose or if you want scalability.
 
 ## Security
-Don't run random images from random dudes on the Internet. Ideally, you want to maintain and build it yourself.
-
-Images are scanned every day by [Trivy](https://github.com/aquasecurity/trivy) for OS vulnerabilities. They are rebuilt once a week, so you should often update your images regardless of your Mastodon version.
+Images are scanned on push by [Trivy](https://github.com/aquasecurity/trivy) for OS vulnerabilities.
 
 ## Features
 - Rootless image
