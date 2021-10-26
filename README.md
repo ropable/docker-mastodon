@@ -56,76 +56,38 @@ Please use your own settings and adjust this example to your needs.
 Here I use Traefik v2 (already configured to redirect 80 to 443 globally).
 
 ```yaml
-version: '2.4'
+version: "3.8"
 
 networks:
-  http_network:
-    external: true
-
   mastodon_network:
-    external: false
-    internal: true
 
 services:
   mastodon:
-    image: ghcr.io/wonderfall/mastodon
-    container_name: mastodon
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    env_file: /wherever/docker/mastodon/.env.production
+    image: ghcr.io/ropable/mastodon
+    env_file: /wherever/docker/mastodon/.env.mastodon
     depends_on:
-      - mastodon-db
-      - mastodon-redis
+      - postgres
+      - redis
     volumes:
       - /wherever/docker/mastodon/data:/mastodon/public/system
       - /wherever/docker/mastodon/logs:/mastodon/log
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.mastodon-web-secure.entrypoints=https
-      - traefik.http.routers.mastodon-web-secure.rule=Host(`domain.tld`)
-      - traefik.http.routers.mastodon-web-secure.tls=true
-      - traefik.http.routers.mastodon-web-secure.middlewares=hsts-headers@file
-      - traefik.http.routers.mastodon-web-secure.tls.certresolver=http
-      - traefik.http.routers.mastodon-web-secure.service=mastodon-web
-      - traefik.http.services.mastodon-web.loadbalancer.server.port=3000
-      - traefik.http.routers.mastodon-streaming-secure.entrypoints=https
-      - traefik.http.routers.mastodon-streaming-secure.rule=Host(`domain.tld`) && PathPrefix(`/api/v1/streaming`)
-      - traefik.http.routers.mastodon-streaming-secure.tls=true
-      - traefik.http.routers.mastodon-streaming-secure.middlewares=hsts-headers@file
-      - traefik.http.routers.mastodon-streaming-secure.tls.certresolver=http
-      - traefik.http.routers.mastodon-streaming-secure.service=mastodon-streaming
-      - traefik.http.services.mastodon-streaming.loadbalancer.server.port=4000
-      - traefik.docker.network=http_network
     networks:
       - mastodon_network
-      - http_network
- 
-   mastodon-redis:
-    image: redis:alpine
-    container_name: mastodon-redis
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
+   redis:
+    image: redis:6-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
     volumes:
       - /wherever/docker/mastodon/redis:/data
     networks:
       - mastodon_network
-
-  mastodon-db:
-    image: postgres:9.6-alpine
-    container_name: mastodon-db
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
+  postgres:
+    image: postgres:14-alpine
     volumes:
       - /wherever/docker/mastodon/db:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=mastodon
-      - POSTGRES_DB=mastodon
-      - POSTGRES_PASSWORD=supersecretpassword
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+    env_file: /wherever/docker/mastodon/.env.postgres
     networks:
       - mastodon_network
 ```
-
-*This image has been tested and works great with the [gVisor runtime](https://gvisor.dev/).*
