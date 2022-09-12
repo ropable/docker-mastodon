@@ -1,11 +1,11 @@
 # -------------- Build-time variables --------------
-ARG MASTODON_VERSION=3.4.1
+ARG MASTODON_VERSION=3.5.3
 ARG MASTODON_REPOSITORY=tootsuite/mastodon
 
-ARG RUBY_VERSION=2.7.4
-ARG NODE_VERSION=14.17.3
-ARG ALPINE_VERSION=3.14
-ARG HARDENED_MALLOC_VERSION=8
+ARG RUBY_VERSION=3.0
+ARG NODE_VERSION=16
+ARG ALPINE_VERSION=3.16
+ARG HARDENED_MALLOC_VERSION=11
 ARG LIBICONV_VERSION=1.16
 
 ARG UID=991
@@ -26,12 +26,13 @@ FROM alpine:${ALPINE_VERSION} as build-malloc
 
 ARG HARDENED_MALLOC_VERSION
 ARG CONFIG_NATIVE=false
+ARG VARIANT=light
 
 RUN apk --no-cache add build-base git gnupg && cd /tmp \
  && wget -q https://github.com/thestinger.gpg && gpg --import thestinger.gpg \
  && git clone --depth 1 --branch ${HARDENED_MALLOC_VERSION} https://github.com/GrapheneOS/hardened_malloc \
  && cd hardened_malloc && git verify-tag $(git describe --tags) \
- && make CONFIG_NATIVE=${CONFIG_NATIVE}
+ && make CONFIG_NATIVE=${CONFIG_NATIVE} VARIANT=${VARIANT}
 
 
 ### Build GNU Libiconv (needed for nokogiri)
@@ -51,7 +52,7 @@ RUN apk --no-cache add build-base \
 FROM node-ruby as mastodon
 
 COPY --from=build-gnulibiconv /tmp/libiconv/output /usr/local
-COPY --from=build-malloc /tmp/hardened_malloc/libhardened_malloc.so /usr/local/lib/
+COPY --from=build-malloc /tmp/hardened_malloc/out-light/libhardened_malloc-light.so /usr/local/lib/
 
 ARG MASTODON_VERSION
 ARG MASTODON_REPOSITORY
@@ -66,9 +67,11 @@ ENV RUN_DB_MIGRATIONS=true \
     RAILS_ENV=production \
     NODE_ENV=production \
     PATH="${PATH}:/mastodon/bin" \
-    LD_PRELOAD="/usr/local/lib/libhardened_malloc.so"
+    LD_PRELOAD="/usr/local/lib/libhardened_malloc-light.so"
 
 WORKDIR /mastodon
+
+COPY ruby-hotfix.patch .
 
 # Install runtime dependencies
 RUN apk --no-cache add \
@@ -83,7 +86,6 @@ RUN apk --no-cache add \
     libxslt \
     libpq \
     openssl \
-    protobuf \
     s6 \
     tzdata \
     yaml \
@@ -97,8 +99,8 @@ RUN apk --no-cache add \
     libtool \
     libxml2-dev \
     libxslt-dev \
+    patch \
     postgresql-dev \
-    protobuf-dev \
     python3 \
     imagemagick \
 # Install Mastodon
