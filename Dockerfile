@@ -1,12 +1,12 @@
 # -------------- Build-time variables --------------
-ARG MASTODON_VERSION=3.5.3
+ARG MASTODON_VERSION=4.0.2
 ARG MASTODON_REPOSITORY=tootsuite/mastodon
 
 ARG RUBY_VERSION=3.0
 ARG NODE_VERSION=16
 ARG ALPINE_VERSION=3.16
 ARG HARDENED_MALLOC_VERSION=11
-ARG LIBICONV_VERSION=1.16
+ARG LIBICONV_VERSION=1.17
 
 ARG UID=991
 ARG GID=991
@@ -70,8 +70,6 @@ ENV RUN_DB_MIGRATIONS=true \
     LD_PRELOAD="/usr/local/lib/libhardened_malloc-light.so"
 
 WORKDIR /mastodon
-
-COPY ruby-hotfix.patch .
 
 # Install runtime dependencies
 RUN apk --no-cache add \
